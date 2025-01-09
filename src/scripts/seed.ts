@@ -2,50 +2,47 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import User from '../models/user.model';
 import Transaction from '../models/transaction.model';
+import { connectDB } from '../config/database';
 
 dotenv.config();
 
-const generateRandomTransaction = (userId: string) => ({
-  status: ['success', 'pending', 'failed'][Math.floor(Math.random() * 3)],
-  type: ['debit', 'credit'][Math.floor(Math.random() * 2)],
-  transactionDate: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
-  amount: Math.floor(Math.random() * 10000),
-  userId
-});
+const seedData = async () => {
+    try {
+        await connectDB();
+        
+        // Clear existing data
+        await User.deleteMany({});
+        await Transaction.deleteMany({});
 
-async function seed() {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI!);
-    
-    // Clear existing data
-    await User.deleteMany({});
-    await Transaction.deleteMany({});
+        // Create 10 users
+        const users = await User.insertMany(
+            Array.from({ length: 10 }, (_, i) => ({
+                name: `User ${i + 1}`,
+                phoneNumber: `+1${Math.floor(1000000000 + Math.random() * 9000000000)}`
+            }))
+        );
 
-    // Create 10 users
-    const users = await User.insertMany(
-      Array.from({ length: 10 }, (_, i) => ({
-        name: `User ${i + 1}`,
-        phoneNumber: `+91${Math.floor(Math.random() * 9000000000) + 1000000000}`
-      }))
-    );
+        // Create 5 transactions per user
+        const transactions = [];
+        for (const user of users) {
+            for (let i = 0; i < 5; i++) {
+                transactions.push({
+                    userId: user._id,
+                    status: ['success', 'pending', 'failed'][Math.floor(Math.random() * 3)],
+                    type: ['debit', 'credit'][Math.floor(Math.random() * 2)],
+                    amount: Math.floor(100 + Math.random() * 9900),
+                    transactionDate: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000)
+                });
+            }
+        }
+        await Transaction.insertMany(transactions);
 
-    console.log('Created users:', users.map(u => ({ id: u._id, name: u.name })));
-
-    // Create 5 transactions for each user
-    for (const user of users) {
-      const transactions = Array.from({ length: 5 }, () => 
-        generateRandomTransaction(user._id)
-      );
-      const createdTransactions = await Transaction.insertMany(transactions);
-      console.log(`Created ${createdTransactions.length} transactions for user ${user.name}`);
+        console.log('Data seeded successfully!');
+        process.exit(0);
+    } catch (error) {
+        console.error('Error seeding data:', error);
+        process.exit(1);
     }
+};
 
-    console.log('Seeding completed!');
-    process.exit(0);
-  } catch (error) {
-    console.error('Seeding failed:', error);
-    process.exit(1);
-  }
-}
-
-seed();
+seedData();

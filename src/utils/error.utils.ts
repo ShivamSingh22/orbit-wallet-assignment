@@ -1,23 +1,16 @@
 export class AppError extends Error {
-    constructor(
-        public message: string,
-        public statusCode: number = 400
-    ) {
+    statusCode: number;
+    
+    constructor(message: string, statusCode = 400) {
         super(message);
-        this.name = 'AppError';
+        this.statusCode = statusCode;
+        Error.captureStackTrace(this, this.constructor);
     }
 }
 
 export const handleError = (error: any) => {
     if (error instanceof AppError) {
-        return {
-            statusCode: error.statusCode,
-            message: error.message
-        };
+        return { statusCode: error.statusCode, message: error.message };
     }
-
-    return {
-        statusCode: 500,
-        message: 'Internal server error'
-    };
+    return { statusCode: 500, message: 'Internal Server Error' };
 }; 
