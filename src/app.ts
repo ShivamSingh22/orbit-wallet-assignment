@@ -1,8 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-
+import { connectDB } from './config/database';
 import userRoutes from './routes/user.routes';
 import transactionRoutes from './routes/transaction.routes';
 
@@ -18,16 +17,11 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/transactions', transactionRoutes);
 
-// MongoDB connection
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI!);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error('Error connecting to MongoDB:', error);
-    process.exit(1);
-  }
-};
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const { statusCode = 500, message = 'Internal Server Error' } = err;
+  res.status(statusCode).json({ error: message });
+});
 
 // Start server
 const PORT = process.env.PORT || 3000;

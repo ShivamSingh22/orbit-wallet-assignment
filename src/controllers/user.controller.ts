@@ -1,31 +1,18 @@
-import { Request, Response } from 'express';
-import User from '../models/user.model';
+import { Request, Response, NextFunction } from 'express';
+import { UserService } from '../services/user.service';
+import { AppError, handleError } from '../utils/error.utils';
 
-export const createUser = async (req: Request, res: Response) => {
-  try {
-    const user = await User.create(req.body);
-    res.status(201).json(user);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message || 'Error creating user' });
-  }
-};
+const userService = new UserService();
 
-export const getUser = async (req: Request, res: Response) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message || 'Error fetching user' });
-  }
-};
-
-export const updateUser = async (req: Request, res: Response) => {
-  try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
-  } catch (error: any) {
-    res.status(400).json({ error: error.message || 'Error updating user' });
-  }
+export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = await userService.getUserById(req.params.id);
+        if (!user) {
+            throw new AppError('User not found', 404);
+        }
+        res.json(user);
+    } catch (error) {
+        const { statusCode, message } = handleError(error);
+        res.status(statusCode).json({ error: message });
+    }
 };

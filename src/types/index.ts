@@ -16,8 +16,8 @@ export interface ITransaction {
 export interface TransactionFilters {
   status?: 'success' | 'pending' | 'failed';
   type?: 'debit' | 'credit';
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: string | Date;
+  endDate?: string | Date;
   page?: number;
   limit?: number;
 }
